@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  name       String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  loans      Loan[]    // Relation to loans
+}
+
+model Loan {
+  id               String    @id @default(cuid())
+  userId           String
+  role             Role
+  title            String
+  description      String?
+  initialAmount    Decimal   @db.Decimal(10, 2)
+  remainingAmount  Decimal   @db.Decimal(10, 2)
+  interestRate     Decimal   @db.Decimal(5, 2)
+  termCount        Int
+  termPayment      Decimal   @db.Decimal(10, 2)
+  counterparty     String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  payments         Payment[] // Relation to payments
+  document    Document[] // Relation to documents
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id          String    @id @default(cuid())
+  loanId      String
+  amount      Decimal   @db.Decimal(10, 2)
+  principal   Decimal   @db.Decimal(10, 2)
+  interest    Decimal   @db.Decimal(10, 2)
+  paymentDate DateTime
+  createdAt   DateTime  @default(now())
+  loan        Loan      @relation(fields: [loanId], references: [id])
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  loanId    String
+  url       String[]
+  createdAt DateTime @default(now())
+  loan      Loan     @relation(fields: [loanId], references: [id])
+}
+
+enum Role {
+  borrower
+  lender
+}
