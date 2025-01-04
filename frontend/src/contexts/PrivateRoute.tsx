@@ -1,19 +1,29 @@
-
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthProvider';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthProvider";
+import { Box, CircularProgress } from "@mui/material";
 
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return <div>Loading...</div>; // Show a loading indicator while checking authentication
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!user || !user.emailVerified) {
-    // Redirect to login page if not authenticated
     return <Navigate to="/auth" />;
   }
-
 
   return children;
 };

@@ -12,6 +12,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   setError: (error: string | null) => void;
+  setLoading: (loading: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -97,7 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, handleEmailLogin, handleEmailSignup, handleLogout, handleGoogleLogin, loading, error,setError }}>
+    <AuthContext.Provider value={{ user, handleEmailLogin, handleEmailSignup, handleLogout, handleGoogleLogin, loading,setLoading, error,setError }}>
       {children}
     </AuthContext.Provider>
   );

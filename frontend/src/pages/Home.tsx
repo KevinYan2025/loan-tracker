@@ -26,10 +26,13 @@ const Home: React.FC = () => {
     fetchLoans();
     setIsModalOpen(false);
   };
-
   const fetchLoans = async () => {
     try {
       const response = await apiClient.get('/loans');
+      console.log('Loans:', response.data);
+      console.log("API get called!!!!!");
+      
+      
       setLoans(response.data);
     } catch (error) {
       console.error('Error fetching loans:', error);
@@ -37,7 +40,7 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchLoans();
+        fetchLoans();
   }, []);
 
   return (

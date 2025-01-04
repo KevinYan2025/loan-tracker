@@ -42,6 +42,7 @@ model Loan {
 
 model Payment {
   id          String    @id @default(cuid())
+  note        String?
   loanId      String
   amount      Decimal   @db.Decimal(10, 2)
   principal   Decimal   @db.Decimal(10, 2)
@@ -52,11 +53,12 @@ model Payment {
 }
 
 model Document {
-  id        String   @id @default(cuid())
-  loanId    String
-  url       String[]
-  createdAt DateTime @default(now())
-  loan      Loan     @relation(fields: [loanId], references: [id])
+  id        String   @id @default(cuid()) // Unique identifier for the document
+  loanId    String   // Foreign key referencing the Loan model
+  s3_folder_path String // S3 folder path for the document
+  createdAt DateTime @default(now()) // Timestamp for document creation
+
+  loan      Loan     @relation(fields: [loanId], references: [id]) // Relationship with the Loan model
 }
 
 enum Role {

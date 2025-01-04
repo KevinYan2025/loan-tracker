@@ -2,10 +2,13 @@ import React from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
 import { styled } from '@mui/material/styles';
+import { useNavigate } from 'react-router-dom';
 
 interface LoanProps {
   loan: {
+    id: string;
     title: string;
     description: string;
     initialAmount: number;
@@ -16,7 +19,7 @@ interface LoanProps {
     counterparty: string;
     role: string;
     createdAt: string; // Assuming createdAt is a string in ISO format
-  };
+  }
 }
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -25,6 +28,10 @@ const StyledCard = styled(Card)(({ theme }) => ({
 }));
 
 const Loan: React.FC<LoanProps> = ({ loan }) => {
+    const navigate = useNavigate();
+  const handleViewDetails = () => {
+    navigate(`/loans/${loan.id}`,{state: { loan }});
+  }
   return (
     <StyledCard>
       <CardContent>
@@ -35,22 +42,22 @@ const Loan: React.FC<LoanProps> = ({ loan }) => {
           {loan.description}
         </Typography>
         <Typography variant="body1">
-          Initial Loan Amount: ${loan.initialAmount}
+          Initial Amount: ${loan.initialAmount}
         </Typography>
         <Typography variant="body1">
-          Remaining Loan Amount: ${loan.remainingAmount}
+          Remaining Amount: ${loan.remainingAmount}
         </Typography>
         <Typography variant="body1">
           Interest Rate: {loan.interestRate}%
         </Typography>
         <Typography variant="body1">
-          Number of Terms (months): {loan.termCount}
+          Term Count: {loan.termCount}
         </Typography>
         <Typography variant="body1">
-          Estimated Monthly Payment: ${loan.termPayment}
+          Term Payment: ${loan.termPayment}
         </Typography>
         <Typography variant="body1">
-          Counterparty Name: {loan.counterparty}
+          Counterparty: {loan.counterparty}
         </Typography>
         <Typography variant="body1">
           Role: {loan.role}
@@ -58,6 +65,14 @@ const Loan: React.FC<LoanProps> = ({ loan }) => {
         <Typography variant="body1">
           Created At: {new Date(loan.createdAt).toLocaleString()}
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleViewDetails}
+          style={{ marginTop: '16px' }}
+        >
+          View Details
+        </Button>
       </CardContent>
     </StyledCard>
   );

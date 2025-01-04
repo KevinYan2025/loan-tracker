@@ -11,7 +11,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     }
     
     const token = authorization.split('Bearer ')[1].trim();
-    console.log(token);
 
     if (!token) {
         res.status(401).json({ error: 'Unauthorized: Invalid token format' });
