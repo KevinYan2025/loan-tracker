@@ -5,15 +5,12 @@ import { prisma } from '../configs/prisma';
 
 export const createLoan = async (req: Request, res: Response): Promise<void> => {
   const {
-    role,
     title,
     description,
     initialAmount,
     remainingAmount,
     interestRate,
-    termCount,
-    termPayment,
-    counterparty,
+    lender,
   } = req.body;
   const files = req.files as Express.Multer.File[];
   const userId = req.user?.uid;
@@ -32,15 +29,14 @@ export const createLoan = async (req: Request, res: Response): Promise<void> => 
       const loan = await tx.loan.create({
         data: {
           userId,
-          role,
           title,
           description,
           initialAmount: parseFloat(initialAmount),
           remainingAmount: parseFloat(remainingAmount),
           interestRate: parseFloat(interestRate),
-          termCount: parseInt(termCount, 10),
-          termPayment: parseFloat(termPayment),
-          counterparty,
+          lender,
+          lastPaymentDate: new Date(),
+          accruedInterest: 0.00,
         },
       });
 
@@ -102,8 +98,10 @@ export const getLoanById = async (req: Request, res: Response): Promise<void> =>
       res.status(401).json({ error: 'Unauthorized: No user ID provided' });
       return;
     }
-    const loan = await getLoanByIdService(userId, id);
-    res.json(loan);
+    
+    const loan = await getLoanByIdService(id);
+    
+    res.status(200).json(loan);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }
@@ -130,5 +128,70 @@ export const getLoanDocumentById = async (req: Request, res: Response): Promise<
     res.status(200).json(urls);
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+};
+export const deleteLoan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.uid;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Unauthorized: No user ID provided' });
+      return;
+    }
+
+    const document = await prisma.document.findFirst({
+      where: {
+        loanId: id,
+      },
+    });
+    const loan = await prisma.loan.findUnique({
+      where: {
+        id,
+      },
+    });
+    if (!loan) {
+      res.status(404).json({ error: 'Loan not found' });
+      return;
+    }
+
+    // Step 2: Delete all files in the S3 folder
+    const documentFolderPath = document?.s3_folder_path;
+    if (documentFolderPath) {
+      try {
+        // Assuming you have a function to delete all files in a folder
+        await deleteFileFromS3(documentFolderPath, true); // `true` indicates recursive deletion
+      } catch (s3Error) {
+        console.error('Error deleting files from S3:', s3Error);
+        res.status(500).json({ error: 'Failed to delete files from S3.' });
+        return;
+      }
+    }
+
+    // Step 3: Delete the loan and associated records in a transaction
+    await prisma.$transaction(async (tx) => {
+      if (document) {
+        await tx.document.delete({
+          where: {
+            id: document.id,
+          },
+        });
+      }
+      await tx.payment.deleteMany({
+        where: {
+          loanId: id,
+        },
+      });
+      await tx.loan.delete({
+        where: {
+          id: loan.id,
+        },
+      });
+    });
+
+    res.status(200).json({ message: 'Loan and associated files deleted successfully.' });
+  } catch (error: any) {
+    console.error('Error deleting loan:', error);
+    res.status(500).json({ error: 'An error occurred while deleting the loan.' });
   }
 };

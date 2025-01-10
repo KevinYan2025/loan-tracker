@@ -29,8 +29,6 @@ const Home: React.FC = () => {
   const fetchLoans = async () => {
     try {
       const response = await apiClient.get('/loans');
-      console.log('Loans:', response.data);
-      console.log("API get called!!!!!");
       
       
       setLoans(response.data);

@@ -1,47 +1,37 @@
 import { prisma } from "../configs/prisma";
 import { Prisma } from '@prisma/client';
-import { Role } from "@prisma/client";
 import { parse } from "node:path";
 interface CreateLoanInput {
   userId: string;
-  role: Role;
   title: string;
   description?: string;
   initialAmount: Prisma.Decimal;
   remainingAmount: Prisma.Decimal;
   interestRate: Prisma.Decimal;
-  termCount: number;
-  termPayment: Prisma.Decimal;
-  counterparty: string;
+  lender: string;
 }
 
 export const createLoanService = async (input: CreateLoanInput) => {
   const {
     userId,
-    role,
     title,
     description,
     initialAmount,
     remainingAmount,
     interestRate,
-    termCount,
-    termPayment,
-    counterparty,
+    lender,
   } = input;
 
   try {
     const loan = await prisma.loan.create({
       data: {
         userId,
-        role,
         title,
         description,
         initialAmount,
         remainingAmount,
         interestRate,
-        termCount : parseInt(termCount.toString()),
-        termPayment,
-        counterparty,
+        lender,
       },
     });
     return loan;
@@ -60,10 +50,9 @@ export const getLoansService = async (userId: string) => {
     return loans;
   };
   
-  export const getLoanByIdService = async (id: string, userId: string) => {
+  export const getLoanByIdService = async (id: string) => {
     const loan = await prisma.loan.findUnique({
       where: {
-        userId,
         id,
       },
     });

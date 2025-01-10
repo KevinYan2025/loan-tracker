@@ -14,10 +14,9 @@ interface LoanProps {
     initialAmount: number;
     remainingAmount: number;
     interestRate: number;
-    termCount: number;
-    termPayment: number;
-    counterparty: string;
-    role: string;
+    accruedInterest: number | 0;
+    lastPaymentDate: string | null;
+    lender: string;
     createdAt: string; // Assuming createdAt is a string in ISO format
   }
 }
@@ -27,10 +26,11 @@ const StyledCard = styled(Card)(({ theme }) => ({
   padding: theme.spacing(2),
 }));
 
+
 const Loan: React.FC<LoanProps> = ({ loan }) => {
     const navigate = useNavigate();
   const handleViewDetails = () => {
-    navigate(`/loans/${loan.id}`,{state: { loan }});
+    navigate(`/loans/${loan.id}`);
   }
   return (
     <StyledCard>
@@ -42,25 +42,19 @@ const Loan: React.FC<LoanProps> = ({ loan }) => {
           {loan.description}
         </Typography>
         <Typography variant="body1">
-          Initial Amount: ${loan.initialAmount}
+  Total Amount: ${+loan.remainingAmount + +loan.accruedInterest}
+</Typography>
+        <Typography variant="body1">
+          Remaining Principal: ${loan.remainingAmount}
         </Typography>
         <Typography variant="body1">
-          Remaining Amount: ${loan.remainingAmount}
+          Remaining Interest: ${loan.accruedInterest}
         </Typography>
         <Typography variant="body1">
           Interest Rate: {loan.interestRate}%
         </Typography>
         <Typography variant="body1">
-          Term Count: {loan.termCount}
-        </Typography>
-        <Typography variant="body1">
-          Term Payment: ${loan.termPayment}
-        </Typography>
-        <Typography variant="body1">
-          Counterparty: {loan.counterparty}
-        </Typography>
-        <Typography variant="body1">
-          Role: {loan.role}
+          Lender Name: {loan.lender}
         </Typography>
         <Typography variant="body1">
           Created At: {new Date(loan.createdAt).toLocaleString()}

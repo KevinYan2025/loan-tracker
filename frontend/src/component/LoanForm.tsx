@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import apiClient from '../configs/axiosConfig';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -6,7 +6,6 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
 import InputAdornment from '@mui/material/InputAdornment';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -20,30 +19,24 @@ interface LoanFormProps {
 
 const LoanForm: React.FC<LoanFormProps> = ({ open, onClose, onSubmitSuccess }) => {
   const [formData, setFormData] = useState({
-    role: 'lender', // Default value
     title: '',
     description: '',
     initialAmount: '',
     remainingAmount: '',
     interestRate: '',
-    termCount: '',
-    termPayment: '',
-    counterparty: '',
+    lender: '',
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
 
   const resetForm = () => {
     setFormData({
-      role: 'lender', // Default value
       title: '',
       description: '',
       initialAmount: '',
       remainingAmount: '',
       interestRate: '',
-      termCount: '',
-      termPayment: '',
-      counterparty: '',
+      lender: '',
     });
     setFiles([]);
   };
@@ -52,6 +45,13 @@ const LoanForm: React.FC<LoanFormProps> = ({ open, onClose, onSubmitSuccess }) =
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+  
+    // Validate the Interest Rate field
+    if (name === "interestRate" && parseFloat(value) > 100) {
+      alert("Interest rate cannot exceed 100%");
+      return;
+    }
+  
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -73,30 +73,6 @@ const LoanForm: React.FC<LoanFormProps> = ({ open, onClose, onSubmitSuccess }) =
     }
   };
 
-  const calculateMonthlyPayment = (
-    principal: number,
-    annualInterestRate: number,
-    numberOfPayments: number
-  ) => {
-    const monthlyInterestRate = annualInterestRate / 12 / 100;
-    return (principal * monthlyInterestRate) /
-      (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
-  };
-
-  useEffect(() => {
-    const { remainingAmount, interestRate, termCount } = formData;
-    if (remainingAmount && interestRate && termCount) {
-      const monthlyPayment = calculateMonthlyPayment(
-        parseFloat(remainingAmount),
-        parseFloat(interestRate),
-        parseInt(termCount)
-      );
-      setFormData((prevData) => ({
-        ...prevData,
-        termPayment: monthlyPayment.toFixed(2),
-      }));
-    }
-  }, [formData.remainingAmount, formData.interestRate, formData.termCount]);
 
   const handleRemoveFile = (fileName: string) => {
     const upadtedFiles = files.filter((file) => file.name !== fileName);
@@ -122,10 +98,9 @@ const LoanForm: React.FC<LoanFormProps> = ({ open, onClose, onSubmitSuccess }) =
     });
   
     try {
-      const response = await apiClient.post('/loans', formDataToSend, {
+      await apiClient.post('/loans', formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      console.log('Loan created:', response.data);
       onSubmitSuccess();
       onClose();
       resetForm();
@@ -142,19 +117,6 @@ const LoanForm: React.FC<LoanFormProps> = ({ open, onClose, onSubmitSuccess }) =
       <DialogTitle>Create Loan</DialogTitle>
       <DialogContent>
         <form onSubmit={handleSubmit} className="loan-form">
-          <TextField
-            select
-            label="You are the"
-            name="role"
-            value={formData.role}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          >
-            <MenuItem value="lender">Lender</MenuItem>
-            <MenuItem value="borrower">Borrower</MenuItem>
-          </TextField>
           <TextField
             label="Loan Title"
             name="title"
@@ -212,32 +174,9 @@ const LoanForm: React.FC<LoanFormProps> = ({ open, onClose, onSubmitSuccess }) =
             required
           />
           <TextField
-            label="Number of Terms (months)"
-            name="termCount"
-            value={formData.termCount}
-            onChange={handleChange}
-            type="number"
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Estimated Monthly Payment"
-            name="termPayment"
-            value={formData.termPayment}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            InputProps={{
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-              readOnly: true,
-            }}
-            disabled
-          />
-          <TextField
-            label="Counterparty Name"
-            name="counterparty"
-            value={formData.counterparty}
+            label="Lender Name"
+            name="lender"
+            value={formData.lender}
             onChange={handleChange}
             fullWidth
             margin="normal"

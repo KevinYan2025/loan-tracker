@@ -1,17 +1,14 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "darwin-arm64", "linux-musl-arm64-openssl-3.0.x"]
+
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 model User {
   id         String    @id @default(cuid())
   email      String    @unique
@@ -23,45 +20,40 @@ model User {
 
 model Loan {
   id               String    @id @default(cuid())
-  userId           String
-  role             Role
+  userId           String    // Borrower creating the loan
   title            String
   description      String?
   initialAmount    Decimal   @db.Decimal(10, 2)
   remainingAmount  Decimal   @db.Decimal(10, 2)
   interestRate     Decimal   @db.Decimal(5, 2)
-  termCount        Int
-  termPayment      Decimal   @db.Decimal(10, 2)
-  counterparty     String
+  accruedInterest  Decimal   @db.Decimal(10, 2) @default(0.00) // Accrued interest
+  startDate        DateTime  @default(now())                  // Loan start date
+  lastPaymentDate  DateTime?                                 // Last payment date
+  lender     String    // Name of the lender (e.g., friend, family)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  payments         Payment[] // Relation to payments
-  document    Document[] // Relation to documents
-  user             User      @relation(fields: [userId], references: [id])
+  payments         Payment[]                                // Relation to payments
+  document         Document[]                               // Relation to documents
+  user             User      @relation(fields: [userId], references: [id]) // Borrower
 }
 
 model Payment {
   id          String    @id @default(cuid())
-  note        String?
-  loanId      String
-  amount      Decimal   @db.Decimal(10, 2)
-  principal   Decimal   @db.Decimal(10, 2)
-  interest    Decimal   @db.Decimal(10, 2)
-  paymentDate DateTime
+  note        String?   // Optional note for the payment
+  loanId      String    // Loan this payment is associated with
+  amount      Decimal   @db.Decimal(10, 2) // Total payment amount
+  outstanding Decimal   @db.Decimal(10, 2) // Remaining balance after payment
+  principal   Decimal   @db.Decimal(10, 2) // Principal portion of the payment
+  interest    Decimal   @db.Decimal(10, 2) // Interest portion of the payment
   createdAt   DateTime  @default(now())
-  loan        Loan      @relation(fields: [loanId], references: [id])
+  loan        Loan      @relation(fields: [loanId], references: [id]) // Relation to Loan
 }
 
 model Document {
-  id        String   @id @default(cuid()) // Unique identifier for the document
-  loanId    String   // Foreign key referencing the Loan model
-  s3_folder_path String // S3 folder path for the document
-  createdAt DateTime @default(now()) // Timestamp for document creation
+  id             String   @id @default(cuid()) // Unique identifier for the document
+  loanId         String   // Foreign key referencing the Loan model
+  s3_folder_path String   // S3 folder path for the document
+  createdAt      DateTime @default(now())      // Timestamp for document creation
 
-  loan      Loan     @relation(fields: [loanId], references: [id]) // Relationship with the Loan model
-}
-
-enum Role {
-  borrower
-  lender
+  loan           Loan     @relation(fields: [loanId], references: [id]) // Relationship with the Loan model
 }

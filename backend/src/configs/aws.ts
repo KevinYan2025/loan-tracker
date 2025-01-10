@@ -28,22 +28,6 @@ export const uploadFileToS3 = async (file: Express.Multer.File, key: string): Pr
     return result.Location; // Return the public URL of the uploaded file
   };
   
-  export const deleteFileFromS3 = async (key: string): Promise<void> => {
-    const bucket_name = process.env.AWS_S3_BUCKET_NAME;
-    if (!bucket_name) {
-      throw new Error('No bucket name provided');
-    }
-    if (!key) {
-      throw new Error('No file key provided');
-    }
-    const params = {
-      Bucket: bucket_name, // Replace with your bucket name
-      Key: key,
-    };
-  
-    await s3.deleteObject(params).promise();
-  };
-
  export  const getPresignedUrls = async (folderPath: string) => {
     try {
         const bucket_name = process.env.AWS_S3_BUCKET_NAME;
@@ -62,7 +46,6 @@ export const uploadFileToS3 = async (file: Express.Multer.File, key: string): Pr
       const { Contents } = await s3.listObjectsV2(params).promise();
   
       if (!Contents || !Contents.length) {
-        console.log('No files found in the folder.');
         return [];
       }
       
@@ -80,5 +63,36 @@ export const uploadFileToS3 = async (file: Express.Multer.File, key: string): Pr
     } catch (error) {
       console.error('Error fetching files or generating URLs:', error);
       throw error;
+    }
+  };
+
+  export const deleteFileFromS3 = async (folderPath: string, isFolder = false): Promise<void> => {
+    if (isFolder) {
+      const listParams = {
+        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+        Prefix: folderPath,
+      };
+      
+      const listedObjects = await s3.listObjectsV2(listParams).promise();
+      if (!listedObjects.Contents?.length) return;
+  
+      const deleteParams = {
+        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+        Delete: { Objects: [] as any[] },
+      };
+  
+      listedObjects.Contents.forEach(({ Key }) => {
+        if (Key) deleteParams.Delete.Objects.push({ Key });
+      });
+  
+      await s3.deleteObjects(deleteParams).promise();
+  
+      if (listedObjects.IsTruncated) await deleteFileFromS3(folderPath, true);
+    } else {
+      const deleteParams = {
+        Bucket: process.env.AWS_S3_BUCKET_NAME!,
+        Key: folderPath,
+      };
+      await s3.deleteObject(deleteParams).promise();
     }
   };
